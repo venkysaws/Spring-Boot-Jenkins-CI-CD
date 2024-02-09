@@ -26,5 +26,18 @@ pipeline {
                     -Dsonar.login=squ_9bd7c664e4941bd4e7670a88ed93d68af40b42a3 '''
             }
         }
+
+        stage("Docker Build & Push"){
+            steps{
+                script{
+                   withDockerRegistry(credentialsId: 'DockerHub-Token', toolName: 'docker') {
+                        
+                        sh "docker build -t spring-boot-prof-management -f Dockerfile.final ."
+                        sh "docker tag spring-boot-prof-management abdeod/spring-boot-prof-management:latest "
+                        sh "docker push abdeod/spring-boot-prof-management:latest "
+                    }
+                }
+            }
+        }
     }
 }
