@@ -12,10 +12,11 @@ pipeline {
                 git branch: 'main', changelog: false, poll: false, url: 'https://github.com/AbderrahmaneOd/Spring-Boot-Jenkins-CI-CD'
             }
         }
-
-        stage("Clean & Package"){
+        
+        stage('OWASP Dependency Check'){
             steps{
-                sh "mvn clean package -DskipTests"
+                dependencyCheck additionalArguments: '--scan ./ --format HTML ', odcInstallation: 'db-check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
 
@@ -27,16 +28,33 @@ pipeline {
             }
         }
 
-        stage("Docker Build & Push"){
+        stage('Clean & Package'){
+            steps{
+                sh "mvn clean package -DskipTests"
+            }
+        }
+
+
+        
+        stage('Docker Build & Push'){
             steps{
                 script{
                    withDockerRegistry(credentialsId: 'DockerHub-Token', toolName: 'docker') {
+                       
+                       def imageName = "spring-boot-prof-management"
+                        def buildTag = "${imageName}:${BUILD_NUMBER}"
                         
-                        sh "docker build -t spring-boot-prof-management -f Dockerfile.final ."
-                        sh "docker tag spring-boot-prof-management abdeod/spring-boot-prof-management:latest "
-                        sh "docker push abdeod/spring-boot-prof-management:latest "
+                        sh "docker build -t ${imageName} -f Dockerfile.final ."
+                        sh "docker tag ${imageName} abdeod/${buildTag} "
+                        sh "docker push abdeod/${buildTag} "
                     }
                 }
+            }
+        }
+        
+        stage('Vulnerability scanning'){
+            steps{
+                sh " trivy image abdeod/${buildTag}"
             }
         }
     }
