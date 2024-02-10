@@ -61,5 +61,11 @@ pipeline {
                 sh " trivy image abdeod/${buildTag}"
             }
         }
+
+        stage("Staging"){
+            steps{
+                sh 'docker-compose up -d'
+            }
+        }
     }
 }
